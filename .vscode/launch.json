@@ -1,0 +1,28 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "simply_fin_flutter",
+            "cwd": "simply_fin_flutter",
+            "request": "launch",
+            "type": "dart"
+        },
+        {
+            "name": "simply_fin_flutter (profile mode)",
+            "cwd": "simply_fin_flutter",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "profile"
+        },
+        {
+            "name": "simply_fin_flutter (release mode)",
+            "cwd": "simply_fin_flutter",
+            "request": "launch",
+            "type": "dart",
+            "flutterMode": "release"
+        }
+    ]
+}
