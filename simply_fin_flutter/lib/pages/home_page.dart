@@ -437,13 +437,13 @@ class _HeroSection extends StatelessWidget {
           end: Alignment.bottomRight,
           colors: [
             AppColors.heroStart,
-            AppColors.dashboardPrimary,
+            AppColors.heroMid,
             AppColors.heroEnd,
           ],
         ),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x1F315EFB),
+            color: AppColors.shadow,
             blurRadius: 28,
             offset: Offset(0, 20),
           ),
@@ -813,7 +813,7 @@ class _UploadPanel extends StatelessWidget {
                 Icon(
                   Icons.description_rounded,
                   size: 42,
-                  color: Color(0xFF5B7BFF),
+                  color: AppColors.iconAccent,
                 ),
                 SizedBox(height: 12),
                 Text(

@@ -18,7 +18,7 @@ class DashboardPanel extends StatelessWidget {
         border: Border.all(color: Colors.white, width: 1.3),
         boxShadow: const [
           BoxShadow(
-            color: Color(0x120E1A3A),
+            color: AppColors.shadow,
             blurRadius: 24,
             offset: Offset(0, 18),
           ),
