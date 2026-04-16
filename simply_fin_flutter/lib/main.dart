@@ -5,6 +5,7 @@ import 'bindings/app_bindings.dart';
 import 'core/supabase_config.dart';
 import 'pages/home_page.dart';
 import 'pages/login_page.dart';
+import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,10 +27,7 @@ class MainApp extends StatelessWidget {
       title: 'SimplyFin',
       debugShowCheckedModeBanner: false,
       initialBinding: AppBindings(),
-      theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF4F6AFF),
-        useMaterial3: true,
-      ),
+      theme: AppTheme.light,
       home: Supabase.instance.client.auth.currentSession != null
           ? const HomePage()
           : const LoginPage(),
