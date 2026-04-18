@@ -22,7 +22,6 @@
 # ===========================
 .env
 .env.*
-!.env.example
 *.secret
 secrets/
 
@@ -32,6 +31,13 @@ secrets/
 # ===========================
 supabase/.temp/
 supabase/.branches/
+
+# ===========================
+# Supabase Edge Functions local dependencies
+# ===========================
+supabase/functions/node_modules/
+supabase/functions/.env.*
+node_modules/
 
 # ===========================
 # Flutter / Dart
