@@ -6,6 +6,11 @@
 .LSOverride
 
 # ===========================
+# JetBrains IDEs
+# ===========================
+.idea/
+
+# ===========================
 # VS Code
 # (keep launch.json / settings.json if your team shares them;
 #  uncomment the line below to exclude the whole folder instead)

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../controllers/auth_controller.dart';
+import '../services/statement_upload_service.dart';
 
 /// Central GetX dependency bindings for the app.
 ///
@@ -9,5 +10,6 @@ class AppBindings extends Bindings {
   @override
   void dependencies() {
     Get.lazyPut<AuthController>(() => AuthController(), fenix: true);
+    Get.lazyPut<StatementUploadService>(() => StatementUploadService(), fenix: true);
   }
 }

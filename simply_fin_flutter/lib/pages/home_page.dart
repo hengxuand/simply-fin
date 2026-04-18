@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../controllers/auth_controller.dart';
 import '../theme/app_theme.dart';
 import '../models/home_models.dart';
+import '../services/statement_upload_service.dart';
 import 'activity_tab.dart';
 import 'insights_tab.dart';
 import 'overview_tab.dart';
@@ -19,6 +20,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   int _currentIndex = 0;
+  late final _uploadService = Get.find<StatementUploadService>();
+  bool _isUploading = false;
 
   @override
   Widget build(BuildContext context) {
@@ -83,22 +86,161 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildBottomNav() {
-    return NavigationBar(
-      height: 76,
-      backgroundColor: Colors.white.withAlpha(245),
-      surfaceTintColor: Colors.transparent,
-      indicatorColor: AppColors.navIndicator,
-      selectedIndex: _currentIndex,
-      onDestinationSelected: _switchTab,
-      destinations: [
-        for (final tab in homeTabs)
-          NavigationDestination(
-            icon: Icon(tab.icon),
-            selectedIcon: Icon(tab.selectedIcon),
-            label: tab.label,
+    // Split tabs: first half | plus button | second half
+    final half = homeTabs.length ~/ 2;
+    final leftTabs = homeTabs.sublist(0, half);
+    final rightTabs = homeTabs.sublist(half);
+
+    return SizedBox(
+      height: 80,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Background bar
+          Positioned.fill(
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white.withAlpha(245),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withAlpha(20),
+                    blurRadius: 8,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
+              ),
+            ),
           ),
-      ],
+          // Left nav items
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            right: MediaQuery.of(context).size.width / 2,
+            child: Row(
+              children: [
+                for (int i = 0; i < leftTabs.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      tab: leftTabs[i],
+                      selected: _currentIndex == i,
+                      onTap: () => _switchTab(i),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Right nav items
+          Positioned(
+            left: MediaQuery.of(context).size.width / 2,
+            top: 0,
+            bottom: 0,
+            right: 0,
+            child: Row(
+              children: [
+                for (int i = 0; i < rightTabs.length; i++)
+                  Expanded(
+                    child: _NavItem(
+                      tab: rightTabs[i],
+                      selected: _currentIndex == half + i,
+                      onTap: () => _switchTab(half + i),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          // Center plus button
+          Positioned(
+            top: -22,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: GestureDetector(
+                onTap: _isUploading ? null : _handleUpload,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        AppColors.dashboardPrimary,
+                        Color(0xFF6366F1),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.dashboardPrimary.withAlpha(100),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: _isUploading
+                      ? const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.add_rounded,
+                          color: Colors.white,
+                          size: 32,
+                        ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
+  }
+
+  Future<void> _handleUpload() async {
+    setState(() => _isUploading = true);
+    try {
+      final res = await _uploadService.pickAndUpload();
+      if (!mounted) return;
+      switch (res.result) {
+        case UploadResult.success:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.message ?? 'Uploaded!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        case UploadResult.duplicate:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.message ?? 'Duplicate statement.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        case UploadResult.error:
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(res.message ?? 'Upload failed.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        case UploadResult.cancelled:
+          break;
+      }
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
+    }
   }
 
   void _switchTab(int index) {
@@ -247,3 +389,50 @@ class _HomeTabContent extends StatelessWidget {
     }
   }
 }
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.tab,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final HomeTabItem tab;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.navIndicator : Colors.transparent,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(
+              selected ? tab.selectedIcon : tab.icon,
+              color: selected ? AppColors.dashboardPrimary : Colors.grey,
+              size: 22,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            tab.label,
+            style: TextStyle(
+              fontSize: 11,
+              color: selected ? AppColors.dashboardPrimary : Colors.grey,
+              fontWeight: selected ? FontWeight.w600 : FontWeight.normal,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
