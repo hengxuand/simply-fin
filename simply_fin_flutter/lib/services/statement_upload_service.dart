@@ -69,6 +69,7 @@ class StatementUploadService {
     final existing = await _supabase
         .from('uploaded_files')
         .select('id')
+        .eq('user_id', userId)
         .eq('file_hash', fileHash)
         .maybeSingle();
 
@@ -118,10 +119,4 @@ class StatementUploadService {
     return (result: UploadResult.success, message: 'Statement uploaded successfully!');
   }
 }
-
-
-
-
-
-
 
