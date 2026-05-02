@@ -35,23 +35,6 @@ DROP POLICY IF EXISTS "uploaded_files: delete own" ON public.uploaded_files;
 CREATE POLICY "uploaded_files: delete own" ON public.uploaded_files
   FOR DELETE USING ((SELECT auth.uid()) = user_id);
 
--- bill_processing_tasks
-DROP POLICY IF EXISTS "bill_processing_tasks: select own" ON public.bill_processing_tasks;
-CREATE POLICY "bill_processing_tasks: select own" ON public.bill_processing_tasks
-  FOR SELECT USING ((SELECT auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "bill_processing_tasks: insert own" ON public.bill_processing_tasks;
-CREATE POLICY "bill_processing_tasks: insert own" ON public.bill_processing_tasks
-  FOR INSERT WITH CHECK ((SELECT auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "bill_processing_tasks: update own" ON public.bill_processing_tasks;
-CREATE POLICY "bill_processing_tasks: update own" ON public.bill_processing_tasks
-  FOR UPDATE USING ((SELECT auth.uid()) = user_id);
-
-DROP POLICY IF EXISTS "bill_processing_tasks: delete own" ON public.bill_processing_tasks;
-CREATE POLICY "bill_processing_tasks: delete own" ON public.bill_processing_tasks
-  FOR DELETE USING ((SELECT auth.uid()) = user_id);
-
 -- transactions
 DROP POLICY IF EXISTS "transactions: select own" ON public.transactions;
 CREATE POLICY "transactions: select own" ON public.transactions

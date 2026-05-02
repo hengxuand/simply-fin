@@ -7,12 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/app_logger.dart';
 
-enum UploadResult {
-  success,
-  duplicate,
-  cancelled,
-  error,
-}
+enum UploadResult { success, duplicate, cancelled, error }
 
 class StatementUploadService {
   final _supabase = Supabase.instance.client;
@@ -47,11 +42,16 @@ class StatementUploadService {
     } else {
       if (file.path == null) {
         appLogger.e('[Upload] File path is null on non-web platform.');
-        return (result: UploadResult.error, message: 'Could not read file path.');
+        return (
+          result: UploadResult.error,
+          message: 'Could not read file path.',
+        );
       }
       bytes = await File(file.path!).readAsBytes();
     }
-    appLogger.d('[Upload] File size: ${(bytes.length / 1024).toStringAsFixed(1)} KB');
+    appLogger.d(
+      '[Upload] File size: ${(bytes.length / 1024).toStringAsFixed(1)} KB',
+    );
 
     // 3. Compute SHA-256 hash
     final digest = sha256.convert(bytes);
@@ -74,7 +74,9 @@ class StatementUploadService {
         .maybeSingle();
 
     if (existing != null) {
-      appLogger.w('[Upload] Duplicate detected — file_hash already exists (id: ${existing['id']}).');
+      appLogger.w(
+        '[Upload] Duplicate detected — file_hash already exists (id: ${existing['id']}).',
+      );
       return (
         result: UploadResult.duplicate,
         message: 'This statement has already been uploaded.',
@@ -85,7 +87,9 @@ class StatementUploadService {
     // 5. Upload to Supabase Storage: statements/{user_id}/{file_hash}.pdf
     final storagePath = 'statements/$userId/$fileHash.pdf';
     appLogger.i('[Upload] Uploading to storage path: "$storagePath"');
-    await _supabase.storage.from('statements').uploadBinary(
+    await _supabase.storage
+        .from('statements')
+        .uploadBinary(
           storagePath,
           Uint8List.fromList(bytes),
           fileOptions: const FileOptions(contentType: 'application/pdf'),
@@ -100,23 +104,18 @@ class StatementUploadService {
           'user_id': userId,
           'file_hash': fileHash,
           'original_file_name': fileName,
+          'processing_status': 'pending',
+          'result_payload': null,
         })
         .select('id')
         .single();
     final fileId = insertedFile['id'] as String;
     appLogger.d('[Upload] uploaded_files record created (id: $fileId).');
 
-    // 7. Create a pending processing task for this statement
-    appLogger.i('[Upload] Creating pending bill_processing_task...');
-    await _supabase.from('bill_processing_tasks').insert({
-      'user_id': userId,
-      'file_id': fileId,
-      'status': 'pending',
-    });
-    appLogger.i('[Upload] Processing task created with status: pending.');
-
     appLogger.i('[Upload] ✅ Done — "$fileName" uploaded successfully.');
-    return (result: UploadResult.success, message: 'Statement uploaded successfully!');
+    return (
+      result: UploadResult.success,
+      message: 'Statement uploaded successfully!',
+    );
   }
 }
-
