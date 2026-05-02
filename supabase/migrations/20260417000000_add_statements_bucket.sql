@@ -23,3 +23,13 @@ USING (
   AND (storage.foldername(name))[2] = auth.uid()::text
 );
 
+-- RLS: users can delete their own files
+CREATE POLICY "Users can delete their own statements"
+ON storage.objects FOR DELETE
+TO authenticated
+USING (
+  bucket_id = 'statements'
+  AND (storage.foldername(name))[1] = 'statements'
+  AND (storage.foldername(name))[2] = auth.uid()::text
+);
+

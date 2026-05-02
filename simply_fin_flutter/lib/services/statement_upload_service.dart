@@ -96,21 +96,53 @@ class StatementUploadService {
         );
     appLogger.i('[Upload] Storage upload complete.');
 
-    // 6. Insert record into DB
-    appLogger.i('[Upload] Inserting record into uploaded_files...');
-    final insertedFile = await _supabase
-        .from('uploaded_files')
-        .insert({
-          'user_id': userId,
-          'file_hash': fileHash,
-          'original_file_name': fileName,
-          'processing_status': 'pending',
-          'result_payload': null,
-        })
-        .select('id')
-        .single();
-    final fileId = insertedFile['id'] as String;
-    appLogger.d('[Upload] uploaded_files record created (id: $fileId).');
+    // 6. Insert record into DB. If DB write fails, roll back the uploaded blob.
+    try {
+      appLogger.i('[Upload] Inserting record into uploaded_files...');
+      final insertedFile = await _supabase
+          .from('uploaded_files')
+          .insert({
+            'user_id': userId,
+            'file_hash': fileHash,
+            'original_file_name': fileName,
+            'processing_status': 'pending',
+            'result_payload': null,
+          })
+          .select('id')
+          .single();
+      final fileId = insertedFile['id'] as String;
+      appLogger.d('[Upload] uploaded_files record created (id: $fileId).');
+    } catch (e, st) {
+      appLogger.e(
+        '[Upload] Database write failed after storage upload. Attempting storage rollback...',
+        error: e,
+        stackTrace: st,
+      );
+      try {
+        final removed = await _supabase.storage.from('statements').remove([
+          storagePath,
+        ]);
+        if (removed.isEmpty) {
+          throw StateError(
+            'No storage object was removed for path: $storagePath',
+          );
+        }
+        appLogger.i(
+          '[Upload] Storage rollback complete for path: "$storagePath".',
+        );
+      } catch (cleanupError, cleanupSt) {
+        appLogger.e(
+          '[Upload] Storage rollback failed for path: "$storagePath".',
+          error: cleanupError,
+          stackTrace: cleanupSt,
+        );
+      }
+
+      return (
+        result: UploadResult.error,
+        message: 'Failed to save statement metadata.',
+      );
+    }
 
     appLogger.i('[Upload] ✅ Done — "$fileName" uploaded successfully.');
     return (
