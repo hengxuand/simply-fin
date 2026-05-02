@@ -40,3 +40,17 @@ CREATE TRIGGER set_updated_at
 BEFORE UPDATE ON uploaded_files
 FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
+
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM pg_publication_tables
+        WHERE pubname = 'supabase_realtime'
+          AND schemaname = 'public'
+          AND tablename = 'profiles'
+    ) THEN
+        ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+    END IF;
+END;
+$$;

@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../controllers/auth_controller.dart';
+import '../controllers/profiles_controller.dart';
 import '../theme/app_theme.dart';
 import '../models/home_models.dart';
 import '../services/statement_upload_service.dart';
@@ -26,6 +27,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<AuthController>();
+    final profilesController = Get.find<ProfilesController>();
     final user = Supabase.instance.client.auth.currentUser;
     final activeTab = homeTabs[_currentIndex];
 
@@ -58,11 +60,23 @@ class _HomePageState extends State<HomePage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _TopBar(
-                            controller: controller,
-                            email: user?.email ?? '',
-                            activeTab: activeTab,
-                          ),
+                          Obx(() {
+                            final username = profilesController
+                                .profile
+                                .value?['username']
+                                ?.toString()
+                                .trim();
+                            final topIdentity =
+                                (username != null && username.isNotEmpty)
+                                ? username
+                                : (user?.email ?? '');
+
+                            return _TopBar(
+                              controller: controller,
+                              topIdentity: topIdentity,
+                              activeTab: activeTab,
+                            );
+                          }),
                           const SizedBox(height: 20),
                           _HomeTabContent(
                             currentIndex: _currentIndex,
@@ -165,10 +179,7 @@ class _HomePageState extends State<HomePage> {
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.dashboardPrimary,
-                        Color(0xFF6366F1),
-                      ],
+                      colors: [AppColors.dashboardPrimary, Color(0xFF6366F1)],
                     ),
                     boxShadow: [
                       BoxShadow(
@@ -233,10 +244,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
       );
     } finally {
       if (mounted) setState(() => _isUploading = false);
@@ -276,12 +284,12 @@ class _HomePageState extends State<HomePage> {
 class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.controller,
-    required this.email,
+    required this.topIdentity,
     required this.activeTab,
   });
 
   final AuthController controller;
-  final String email;
+  final String topIdentity;
   final HomeTabItem activeTab;
 
   @override
@@ -314,7 +322,7 @@ class _TopBar extends StatelessWidget {
                 ),
               ),
               Text(
-                '${activeTab.subtitle}  •  $email',
+                '${activeTab.subtitle}  •  $topIdentity',
                 style: const TextStyle(
                   fontSize: 14,
                   color: AppColors.textMuted,
@@ -435,4 +443,3 @@ class _NavItem extends StatelessWidget {
     );
   }
 }
-
